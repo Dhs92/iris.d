@@ -6,12 +6,12 @@ pub struct LocalClient {
     host: String,
 }
 
-impl Into<User> for LocalClient {
-    fn into(self) -> User {
+impl From<LocalClient> for User {
+    fn from(client: LocalClient) -> Self {
         User {
-            nick: self.nick,
-            addr: self.addr,
-            host: self.host,
+            nick: client.nick,
+            addr: client.addr,
+            host: client.host,
             registered_nicks: Vec::new(),
         }
     }
