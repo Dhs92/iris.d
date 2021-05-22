@@ -1,5 +1,8 @@
-use std::net::IpAddr;
+use std::{net::{IpAddr, ToSocketAddrs}, str::FromStr};
 
+use dns_lookup::lookup_addr;
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct LocalClient {
     nick: String,
     addr: IpAddr,
@@ -18,6 +21,17 @@ impl From<LocalClient> for User {
 }
 
 impl LocalClient {
+    pub fn new(nick: &str, addr: IpAddr) -> Self {
+        let host = lookup_addr(&addr).unwrap(); // TODO handle error
+        let nick = nick.into();
+
+        Self {
+            nick,
+            addr,
+            host
+        }
+    }
+
     pub fn promote(self) -> User {
         self.into()
     }
