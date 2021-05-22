@@ -1,4 +1,4 @@
-use std::{net::{IpAddr, ToSocketAddrs}, str::FromStr};
+use std::net::IpAddr;
 
 use dns_lookup::lookup_addr;
 
@@ -25,11 +25,7 @@ impl LocalClient {
         let host = lookup_addr(&addr).unwrap(); // TODO handle error
         let nick = nick.into();
 
-        Self {
-            nick,
-            addr,
-            host
-        }
+        Self { nick, addr, host }
     }
 
     pub fn promote(self) -> User {
