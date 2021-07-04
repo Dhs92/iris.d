@@ -32,7 +32,7 @@ nickname = @{ (letter | special) ~ (letter | ASCII_DIGIT | special | "-"){0,8} }
 servername = { hostname }
 user = @{ ('\u{01}'..'\u{09}' | '\u{0B}'..'\u{0C}' | '\u{0E}'..'\u{1F}' | '\u{21}'..'\u{3F}' | '\u{41}'..'\u{FF}')+  }
 channel = { ("#" | "+" | ("!" ~ channelid) | "&") ~ chanstring ~ (":" ~ chanstring)? }
-channelid = { letter{5} }
+channelid = { (letter | ASCII_DIGIT){5} }
 chanstring = @{ ('\u{01}'..'\u{07}' | '\u{08}'..'\u{09}' | '\u{0B}'..'\u{0C}' | '\u{0E}'..'\u{1F}' | '\u{21}'..'\u{2B}' | '\u{2D}'..'\u{39}' | '\u{3B}'..'\u{FF}')+ }
 targetmask = { "$" | "#" ~ mask }
 
