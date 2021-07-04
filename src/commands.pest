@@ -1,9 +1,9 @@
 WHITESPACE = _{ " " }
 NUL = { "\0" }
-letter = _{ ASCII_ALPHANUMERIC }
+letter = _{ ASCII_ALPHA }
 special = _{ '\u{5B}'..'\u{60}' | '\u{7B}'..'\u{7D}' }
 nospcrlf = _{ !(NUL | NEWLINE | WHITESPACE | "," | ":") ~ ANY }
-shortname = @{ !"-" ~ (letter | "-")+ ~ !"-" }
+shortname = @{ !"-" ~ (letter | ASCII_DIGIT | "-")+ ~ !"-" }
 trailing = { (":" | WHITESPACE | nospcrlf)* }
 mode = @{ (("+" | "-" ) ~ ( "i" | "w" | "o" | "O" | "r")* ) }
 modemask = { ASCII_DIGIT }
@@ -28,7 +28,7 @@ msgto = { channel | ( user ~ ("%" ~ host)? ~ "@" ~ servername)
         | nickname | (nickname ~ "!" ~ user ~ "@" ~ host) }
 
 // naming
-nickname = @{ (letter | special) ~ (letter | special | "-"){0,8} }
+nickname = @{ (letter | special) ~ (letter | ASCII_DIGIT | special | "-"){0,8} }
 servername = { hostname }
 user = @{ ('\u{01}'..'\u{09}' | '\u{0B}'..'\u{0C}' | '\u{0E}'..'\u{1F}' | '\u{21}'..'\u{3F}' | '\u{41}'..'\u{FF}')+  }
 channel = { ("#" | "+" | ("!" ~ channelid) | "&") ~ chanstring ~ (":" ~ chanstring)? }
