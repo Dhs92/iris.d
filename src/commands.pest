@@ -1,0 +1,56 @@
+WHITESPACE = _{ " " }
+letter = _{ ASCII_ALPHANUMERIC }
+special = _{ '['..'`' | '_'..'}' }
+nospcrlf = _{ !("\0" | "\r" | "\n" | WHITESPACE | "," | ":") ~ ANY }
+shortname = @{ !"-" ~ (letter | "-")+ ~ !"-" }
+trailing = { (":" | WHITESPACE | nospcrlf)* }
+mode = @{ (("+" | "-" ) ~ ( "i" | "w" | "o" | "O" | "r")* ) }
+modemask = { ASCII_DIGIT }
+password = @{ ANY* }
+distribution = @{ ("*" ~ shortname? ~ ("." ~ shortname)?) | hostname }
+reserved = _{ "*" }
+
+// wildcards
+mask = { (nowild | noesc ~ wildone | noesc ~ wildmany)* }
+wildone = { "?" }
+wildmany = { "*" }
+nowild = { !("\0" | "*" | "?")* ~ ANY }
+noesc = { !("\0" | "\\")* ~ ANY }
+matchone = { ANY }
+matchmany = { matchone* }
+
+// messaging
+target = { nickname | servername }
+msgtarget = { msgto | ("," ~ msgto)* }
+msgto = { channel | ( user ~ ("%" ~ host)? ~ "@" ~ servername)
+        | (user ~ "%" ~ host) | targetmask
+        | nickname | (nickname ~ "!" ~ user ~ "@" ~ host) }
+
+// naming
+nickname = { (letter | special) ~ (letter | special | "-"){0,8} }
+servername = @{ hostname }
+user = @{ ('\u{01}'..'\u{09}' | '\u{0B}'..'\u{0C}' | '\u{0E}'..'\u{1F}' | '\u{21}'..'\u{3F}' | '\u{41}'..'\u{FF}')+  }
+channel = { ("#" | "+" | ("!" ~ channelid) | "&") ~ chanstring ~ (":" ~ chanstring)? }
+channelid = { letter{5} }
+chanstring = @{ ('\u{01}'..'\u{07}' | '\u{08}'..'\u{09}' | '\u{0B}'..'\u{0C}' | '\u{0E}'..'\u{1F}' | '\u{21}'..'\u{2B}' | '\u{2D}'..'\u{39}' | '\u{3B}'..'\u{FF}')+ }
+targetmask = { "$" | "#" ~ mask }
+
+// network
+host = { hostname | hostaddr }
+hostname = @{ shortname ~ ("." ~ shortname)* }
+hostaddr = _{ ipv4 | ipv6 }
+ipoctet = { ASCII_DIGIT{1,3} }
+ipv4 = { (ipoctet ~ "." | ipoctet){4} }
+ipv6 = { ASCII_HEX_DIGIT+ ~ (ASCII_HEX_DIGIT ~ ":"){7} | "0:0:0:0:0:" ~ ( "0" | "FFFF" ) ~ ":" ~ ipv4 }
+
+passcmd = { ^"PASS" ~ password }
+nickcmd = { ^"NICK" ~ nickname }
+usercmd = { ^"USER" ~ user ~ modemask ~ reserved ~ trailing }
+opercmd = { ^"OPER" ~ nickname ~ password }
+modecmd = { ^"MODE" ~ nickname ~ mode }
+servicecmd = { ^"SERVICE" ~ nickname ~ reserved ~ distribution ~ reserved{0,2} ~ trailing }
+quitcmd = { ^"QUIT" ~ trailing? }
+squitcmd = { ^"SQUIT" ~ servername ~ trailing }
+privmsgcmd = { ^"PRIVMSG" ~ msgtarget ~ trailing }
+kickcmd = { ^"KICK" ~ channel ~ ("," ~ channel)* ~ nickname ~ ("," ~ nickname)* ~ trailing? }
+commands = _{ passcmd | nickcmd | usercmd | opercmd | modecmd | servicecmd | quitcmd | squitcmd | privmsgcmd | kickcmd }
