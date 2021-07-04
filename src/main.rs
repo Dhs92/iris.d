@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-fn main() {
-    println!("Hello, world!");
-=======
 use pest::Parser;
 use pest_derive::*;
 
@@ -21,5 +17,4 @@ fn main() {
 //     println!();
 //     ('\u{41}'..='\u{FF}').for_each(|c| print!("{}", c));
 //     println!();
->>>>>>> 6acd8d9959f22181632249e79c7ebc5305af19f6
 }
