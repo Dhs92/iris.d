@@ -1,12 +1,18 @@
 WHITESPACE = _{ " " }
 NUL = { "\0" }
-letter = _{ ASCII_ALPHA }
+// "[", "]", "\", "`", "_", "^", "{", "|", "}"
 special = _{ '\u{5B}'..'\u{60}' | '\u{7B}'..'\u{7D}' }
-nospcrlf = _{ !(NUL | NEWLINE | WHITESPACE | "," | ":") ~ ANY }
-shortname = @{ !"-" ~ (letter | ASCII_DIGIT | "-")+ ~ !"-" }
-trailing = { (":" | WHITESPACE | nospcrlf)* }
+nospcrlf = _{ !(NUL | NEWLINE | WHITESPACE | ":") ~ ANY }
+
+shortname = @{ !"-" ~ (ASCII_ALPHA | ASCII_DIGIT | "-")+ ~ !"-" }
+message = { (":" ~ prefix)? ~ command ~ (params)? }
+command = @{ ASCII_ALPHA+ | ASCII_DIGIT{3} }
+params = _{ (middle{0,14} ~ (":" ~ trailing)?) | (middle{0,14} ~ (":"? ~ trailing)?)}
+trailing = @{ (":" | WHITESPACE | nospcrlf)* }
+middle = @{ nospcrlf ~ (":" | nospcrlf)* }
 mode = @{ (("+" | "-" ) ~ ( "i" | "w" | "o" | "O" | "r")* ) }
 modemask = { ASCII_DIGIT }
+prefix = { (nickname ~ (("!" ~ user)? ~ "@" ~ host)?) | servername }
 password = @{ (!(NEWLINE | WHITESPACE | NUL) ~ ANY)* }
 distribution = @{ ("*" ~ shortname? ~ ("." ~ shortname)?) | hostname }
 reserved = _{ "*" }
@@ -22,27 +28,30 @@ matchmany = { matchone* }
 
 // messaging
 target = { nickname | servername }
-msgtarget = ${ msgto ~ ("," ~ msgto)* }
-msgto = { channel | ( user ~ ("%" ~ host)? ~ "@" ~ servername)
-        | (user ~ "%" ~ host) | targetmask
-        | nickname | (nickname ~ "!" ~ user ~ "@" ~ host) }
+msgtarget = @{ msgto ~ ("," ~ msgto)* }
+msgto = ${ channel | (user ~ "%" ~ host) 
+        | (user ~ ("%" ~ host)? ~ "@" ~ servername) | targetmask
+        | nickname | (nickname ~ "!" ~ user ~ "@" ~ host)
+         }
 
 // naming
-nickname = @{ (letter | special) ~ (letter | ASCII_DIGIT | special | "-"){0,8} }
+nickname = @{ (ASCII_ALPHA | special) ~ (ASCII_ALPHA | ASCII_DIGIT | special | "-"){0,8} }
 servername = { hostname }
-user = @{ ('\u{01}'..'\u{09}' | '\u{0B}'..'\u{0C}' | '\u{0E}'..'\u{1F}' | '\u{21}'..'\u{3F}' | '\u{41}'..'\u{FF}')+  }
+// all octets except for NUL, CR, LF, " " and "@"
+//user = @{ ('\u{01}'..'\u{09}' | '\u{0B}'..'\u{0C}' | '\u{0E}'..'\u{1F}' | '\u{21}'..'\u{3F}' | '\u{41}'..'\u{FF}')+ }
+user = @{ (!(NUL | NEWLINE | WHITESPACE | "@" | ",") ~ ANY)+ }
 channel = { ("#" | "+" | ("!" ~ channelid) | "&") ~ chanstring ~ (":" ~ chanstring)? }
-channelid = { (letter | ASCII_DIGIT){5} }
-chanstring = @{ ('\u{01}'..'\u{07}' | '\u{08}'..'\u{09}' | '\u{0B}'..'\u{0C}' | '\u{0E}'..'\u{1F}' | '\u{21}'..'\u{2B}' | '\u{2D}'..'\u{39}' | '\u{3B}'..'\u{FF}')+ }
+channelid = { (ASCII_ALPHA | ASCII_DIGIT){5} }
+chanstring = @{ ('\u{01}'..'\u{06}' | '\u{08}'..'\u{09}' | '\u{0B}'..'\u{0C}' | '\u{0E}'..'\u{1F}' | '\u{21}'..'\u{2B}' | '\u{2D}'..'\u{39}' | '\u{3B}'..'\u{FF}'){,49} }
 targetmask = { "$" | "#" ~ mask }
 
 // network
 host = { hostname | hostaddr }
 hostname = @{ shortname ~ ("." ~ shortname)* }
 hostaddr = _{ ipv4 | ipv6 }
-ipoctet = { ASCII_DIGIT{1,3} }
-ipv4 = { (ipoctet ~ "." | ipoctet){4} }
-ipv6 = { ASCII_HEX_DIGIT+ ~ (ASCII_HEX_DIGIT ~ ":"){7} | "0:0:0:0:0:" ~ ( "0" | "FFFF" ) ~ ":" ~ ipv4 }
+ipoctet = @{ ASCII_DIGIT{1,3} }
+ipv4 = @{ (ipoctet ~ "." | ipoctet){4} }
+ipv6 = @{ ASCII_HEX_DIGIT+ ~ (ASCII_HEX_DIGIT ~ ":"){7} | "0:0:0:0:0:" ~ ( "0" | "FFFF" ) ~ ":" ~ ipv4 }
 
 passcmd = { ^"PASS" ~ password }
 nickcmd = { ^"NICK" ~ nickname }
@@ -54,4 +63,4 @@ quitcmd = { ^"QUIT" ~ trailing? }
 squitcmd = { ^"SQUIT" ~ servername ~ trailing }
 privmsgcmd = { ^"PRIVMSG" ~ msgtarget ~ trailing }
 kickcmd = { ^"KICK" ~ channel ~ ("," ~ channel)* ~ nickname ~ ("," ~ nickname)* ~ trailing? }
-commands = _{ passcmd | nickcmd | usercmd | opercmd | modecmd | servicecmd | quitcmd | squitcmd | privmsgcmd | kickcmd }
+commands = _{ (":" ~ prefix ~ WHITESPACE)? ~ (passcmd | nickcmd | usercmd | opercmd | modecmd | servicecmd | quitcmd | squitcmd | privmsgcmd | kickcmd) }
