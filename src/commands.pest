@@ -52,15 +52,3 @@ hostaddr = _{ ipv4 | ipv6 }
 ipoctet = @{ ASCII_DIGIT{1,3} }
 ipv4 = @{ (ipoctet ~ "." | ipoctet){4} }
 ipv6 = @{ ASCII_HEX_DIGIT+ ~ (ASCII_HEX_DIGIT ~ ":"){7} | "0:0:0:0:0:" ~ ( "0" | "FFFF" ) ~ ":" ~ ipv4 }
-
-passcmd = { ^"PASS" ~ password }
-nickcmd = { ^"NICK" ~ nickname }
-usercmd = { ^"USER" ~ user ~ modemask ~ reserved ~ trailing }
-opercmd = { ^"OPER" ~ nickname ~ password }
-modecmd = { ^"MODE" ~ nickname ~ mode }
-servicecmd = { ^"SERVICE" ~ nickname ~ reserved ~ distribution ~ reserved{0,2} ~ trailing }
-quitcmd = { ^"QUIT" ~ trailing? }
-squitcmd = { ^"SQUIT" ~ servername ~ trailing }
-privmsgcmd = { ^"PRIVMSG" ~ msgtarget ~ trailing }
-kickcmd = { ^"KICK" ~ channel ~ ("," ~ channel)* ~ nickname ~ ("," ~ nickname)* ~ trailing? }
-commands = _{ (":" ~ prefix ~ WHITESPACE)? ~ (passcmd | nickcmd | usercmd | opercmd | modecmd | servicecmd | quitcmd | squitcmd | privmsgcmd | kickcmd) }
