@@ -1,20 +1,49 @@
-use pest::Parser;
-use pest_derive::*;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
 
-#[derive(Parser)]
-#[grammar = "commands.pest"]
-struct CommandParser;
+pub trait Reset<T: Copy> {
+    fn reset(&mut self);
+}
 
-fn main() {
-    println!("{:#?}", CommandParser::parse(Rule::commands, "PRIVMSG Yuuki,#foobar,GH0S1,yuuki@local.host :Fuk u!").unwrap());
-//     ('\u{01}'..='\u{09}').for_each(|c| print!("{}", c));
-//     println!(); 
-//     ('\u{0B}'..='\u{0C}').for_each(|c| print!("{}", c));
-//     println!();
-//     ('\u{0E}'..='\u{1F}').for_each(|c| print!("{}", c));
-//     println!();
-//     ('\u{21}'..='\u{3F}').for_each(|c| print!("{}", c));
-//     println!();
-//     ('\u{41}'..='\u{FF}').for_each(|c| print!("{}", c));
-//     println!();
+impl Reset<u8> for Vec<u8> {
+    fn reset(&mut self) {
+        for i in self {
+            *i = 0;
+        }
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let listener = TcpListener::bind("127.0.0.1:8000").await?;
+
+    loop {
+        let (mut socket, _) = listener.accept().await?;
+
+        tokio::spawn(async move {
+            let mut buf = vec![0; 512];
+
+            // In a loop, read data from the socket and print.
+            loop {
+                match socket.read(&mut buf).await {
+                    // socket closed
+                    Ok(n) if n == 0 => return,
+                    Ok(_n) => {
+                        match String::from_utf8(buf.clone()) {
+                            Ok(message) => print!("{}", message),
+                            Err(_) => {
+                                let _ = socket.write("Invalid UTF-8 byte sequence".as_bytes());
+                                return;
+                            }
+                        };
+                        buf.reset();
+                    }
+                    Err(e) => {
+                        eprintln!("failed to read from socket; err = {:?}", e);
+                        return;
+                    }
+                }
+            }
+        });
+    }
 }
