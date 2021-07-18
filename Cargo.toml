@@ -10,3 +10,5 @@ tokio = { version = "1", features = ["full"] }
 petgraph = "0.5.1"
 pest = "2"
 pest_derive = "2"
+bitflags = "1.2.1"
+dns-lookup = "1.0.8"
