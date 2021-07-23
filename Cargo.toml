@@ -6,9 +6,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1", features = ["full"] }
-petgraph = "0.5.1"
+tokio = { version = "1.8.2", features = ["full"] }
+petgraph = "0.6.0"
 pest = "2"
 pest_derive = "2"
 bitflags = "1.2.1"
 dns-lookup = "1.0.8"
+lazy_static = "1.4.0"
+log = "0.4.14"
+flexi_logger = "0.18.0"
+serde = { version = "1.0.126", features = ["derive"] }
