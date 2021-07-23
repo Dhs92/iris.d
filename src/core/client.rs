@@ -1,4 +1,4 @@
-use std::{fmt::{Display, Formatter, Result as FmtResult}, io::Result as IoResult, net::IpAddr};
+use std::{fmt::{Display, Formatter, Result as FmtResult}, io::Result as IoResult};
 
 use bitflags::bitflags;
 use dns_lookup::lookup_addr;
@@ -7,7 +7,7 @@ use log::{error, debug};
 use serde::{Serialize, Deserialize};
 
 bitflags! {
-    #[derive(Serialize, Deserialize)]
+    #[derive(Serialize, Deserialize, Default)]
     pub struct Modes: u8 {
         const INVISIBLE = 0b0000_0001;
         const NOTICES = 0b0000_0010;
@@ -18,11 +18,14 @@ bitflags! {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LocalClient {
+    #[serde(skip)]
     nick: String,
     user: String,
+    #[serde(skip)]
     real_name: String,
-    addr: IpAddr,
+    #[serde(skip)]
     host: String,
+    #[serde(skip)]
     mode: Modes,
 
     // if connection is `None` user will be in invalid state
@@ -47,8 +50,7 @@ impl From<LocalClient> for User {
 
 impl LocalClient {
     pub fn with(nick: &str, user: &str, real_name: &str, modes: u8, connection: TcpStream) -> IoResult<Self> {
-        let addr = connection.peer_addr()?.ip();
-        let host = lookup_addr(&addr)?;
+        let host = lookup_addr(&connection.peer_addr()?.ip())?;
         let nick = nick.into();
         let user = user.into();
         let real_name = real_name.into();
@@ -66,7 +68,6 @@ impl LocalClient {
             nick,
             user,
             real_name,
-            addr,
             host,
             mode,
             connection,
