@@ -50,7 +50,7 @@ impl From<LocalClient> for User {
 
 impl LocalClient {
     pub fn with(nick: &str, user: &str, real_name: &str, modes: u8, connection: TcpStream) -> IoResult<Self> {
-        let host = lookup_addr(&connection.peer_addr()?.ip())?;
+        let hostname = lookup_addr(&connection.peer_addr()?.ip())?;
         let nick = nick.into();
         let user = user.into();
         let real_name = real_name.into();
@@ -68,7 +68,7 @@ impl LocalClient {
             nick,
             user,
             real_name,
-            hostname: host,
+            hostname,
             mode,
             connection,
         };
