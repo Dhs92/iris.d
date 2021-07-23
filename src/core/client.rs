@@ -1,10 +1,14 @@
-use std::{fmt::{Display, Formatter, Result as FmtResult}, io::Result as IoResult};
+use std::{
+    fmt::{Display, Formatter, Result as FmtResult},
+    io::Result as IoResult,
+    net::IpAddr,
+};
 
 use bitflags::bitflags;
 use dns_lookup::lookup_addr;
+use log::{debug, error, warn};
+use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
-use log::{error, debug};
-use serde::{Serialize, Deserialize};
 
 bitflags! {
     #[derive(Serialize, Deserialize, Default)]
@@ -17,44 +21,54 @@ bitflags! {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct LocalClient {
+pub enum Client {
+    Unregistered(UserData),
+    RegisteredUser(UserData, Vec<String>),
+}
+
+impl Client {
+    pub fn promote(self) -> Self {
+        match self {
+            Self::Unregistered(data) => Self::RegisteredUser(data, Vec::new()),
+            _ => {
+                warn!("Promote called on registered user");
+                self
+            }
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserData {
+    user: String,
     #[serde(skip)]
     nick: String,
-    user: String,
     #[serde(skip)]
     real_name: String,
     #[serde(skip)]
     hostname: String,
     #[serde(skip)]
     mode: Modes,
-
-    // if connection is `None` user will be in invalid state
-    #[serde(skip)]
-    connection: Option<TcpStream>,
 }
 
-impl Display for LocalClient {
+impl Display for UserData {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{}!{}@{}", self.nick, self.user, self.hostname)
     }
 }
 
-impl From<LocalClient> for User {
-    fn from(client: LocalClient) -> Self {
-        User {
-            client,
-            registered_nicks: Vec::new(),
-        }
-    }
-}
-
-impl LocalClient {
-    pub fn with(nick: &str, user: &str, real_name: &str, modes: u8, connection: TcpStream) -> IoResult<Self> {
-        let hostname = lookup_addr(&connection.peer_addr()?.ip())?;
+impl UserData {
+    pub fn with(
+        nick: &str,
+        user: &str,
+        real_name: &str,
+        modes: u8,
+        addr: IpAddr,
+    ) -> IoResult<Self> {
+        let hostname = lookup_addr(&addr)?;
         let nick = nick.into();
         let user = user.into();
         let real_name = real_name.into();
-        let connection = Some(connection);
         let mode = match Modes::from_bits(modes) {
             Some(mode) => mode,
             None => {
@@ -64,29 +78,22 @@ impl LocalClient {
             }
         };
 
-        let local_client = Self {
+        let user_data = Self {
             nick,
             user,
             real_name,
             hostname,
             mode,
-            connection,
         };
 
-        debug!("Creating LocalClient: {}", local_client);
+        debug!("Creating LocalClient: {}", user_data);
 
-        Ok(local_client)
-    }
-
-    pub fn promote(self) -> User {
-        debug!("Promoting from LocalUser to User: {}", self);
-        self.into()
+        Ok(user_data)
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct User {
-    #[serde(flatten)]
-    client: LocalClient,
-    registered_nicks: Vec<String>
+#[derive(Debug)]
+pub struct Connection {
+    user: Client,
+    conn: TcpStream,
 }
