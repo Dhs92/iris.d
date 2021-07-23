@@ -24,7 +24,7 @@ pub struct LocalClient {
     #[serde(skip)]
     real_name: String,
     #[serde(skip)]
-    host: String,
+    hostname: String,
     #[serde(skip)]
     mode: Modes,
 
@@ -35,7 +35,7 @@ pub struct LocalClient {
 
 impl Display for LocalClient {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(f, "{}!{}@{}", self.nick, self.user, self.host)
+        write!(f, "{}!{}@{}", self.nick, self.user, self.hostname)
     }
 }
 
@@ -68,7 +68,7 @@ impl LocalClient {
             nick,
             user,
             real_name,
-            host,
+            hostname: host,
             mode,
             connection,
         };
