@@ -83,7 +83,9 @@ impl LocalClient {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct User {
+    #[serde(flatten)]
     client: LocalClient,
     registered_nicks: Vec<String>
 }
